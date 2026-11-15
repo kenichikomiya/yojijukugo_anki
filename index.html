@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="四字熟語">
+<title>四字熟語 学習帳（漢検準2級）</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:linear-gradient(#eef4ff,#dde8fb);min-height:100vh;color:#1f2937}
+button,label{user-select:none;-webkit-user-select:none}
+.wrap{max-width:480px;margin:0 auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:8px;min-height:44px;margin-bottom:8px}
+.back{border:0;background:#fff;color:#2563eb;font-weight:700;padding:8px 14px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,.12);font-size:15px}
+h1{font-size:22px;margin:4px 0 2px;text-align:center}
+.sub{text-align:center;color:#6b7280;font-size:13px;margin-bottom:14px}
+.opt{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:15px;cursor:pointer}
+.opt input{width:22px;height:22px}
+.sets{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.set{border:0;background:#fff;border-radius:12px;padding:14px 10px;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:15px;color:#1f2937}
+.set b{display:block;font-size:17px;margin-bottom:2px}
+.set small{color:#6b7280;font-size:12px}
+.bar{height:6px;background:#e5e7eb;border-radius:3px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:#22c55e}
+.set.done{background:#ecfdf5}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.1);padding:24px 20px;margin-bottom:14px}
+.reading{display:flex;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+.mora{display:flex;flex-direction:column;align-items:center;min-width:1.15em;font-size:19px;color:#2563eb;letter-spacing:0}
+.mora .dot{height:14px;line-height:14px;font-size:14px;color:#dc2626;font-weight:700}
+.editing .mora{border:1px dashed #93c5fd;border-radius:4px;margin:0 1px;cursor:pointer}
+.acc-note{text-align:center;font-size:11px;color:#9ca3af;margin-bottom:10px}
+.word{text-align:center;font-size:48px;font-weight:700;letter-spacing:.08em;margin:6px 0 14px}
+.meaning{font-size:16px;line-height:1.7;text-align:center;margin-bottom:16px}
+.sec{border-top:1px solid #e5e7eb;padding-top:12px;margin-top:12px}
+.sec h3{margin:0 0 6px;font-size:13px;color:#6b7280;font-weight:700}
+.sec p{margin:0;font-size:15px;line-height:1.75}
+.none{color:#9ca3af}
+.ex mark{background:#fef08a;padding:0 2px;border-radius:2px}
+.nav{display:flex;gap:8px;margin-bottom:14px}
+.nav button{border:0;border-radius:12px;padding:16px 0;font-size:18px;font-weight:700;color:#fff;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+.nav button:active,.set:active,.back:active{transform:scale(.97)}
+.next{background:#22c55e;flex:4}
+.prev{background:#9ca3af;flex:1}
+.learned{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:14px;font-size:16px;cursor:pointer}
+.learned input{width:24px;height:24px}
+.small-btns{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.small-btns button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;color:#374151}
+.small-btns button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+.center{text-align:center;padding:40px 0}
+.center p{font-size:20px;font-weight:700}
+.big{border:0;background:#2563eb;color:#fff;border-radius:12px;padding:14px 22px;font-size:16px;font-weight:700;margin:6px}
+.tools{margin-top:20px;background:#fff;border-radius:12px;padding:12px 14px;font-size:13px;color:#4b5563}
+.tools button{border:1px solid #cbd5e1;background:#f9fafb;border-radius:8px;padding:8px 12px;margin:4px 6px 0 0;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+// ============================================================
+// 四字熟語 学習帳（漢検準2級・出る順A 281語）
+// 学習記録は localStorage に保存（キー名を変更しないこと）
+//   yojiApp_learned : { "id": true } 覚えた語
+//   yojiApp_accent  : { "id": [高く発音する拍の番号(0始まり)] } 手入力したアクセント
+// データ: accent が null の語は「記載なし」と表示し、画面上で手入力できる
+// ============================================================
+const DATA = [
+{"id": 1, "answer": "周知徹底", "reading": "しゅうちてってい", "meaning": "世間に広く知れ渡らせること。", "origin": "", "example": "「明日は全員パジャマで出社」と課長が周知徹底したため、翌朝のオフィスは寝ぐせだらけになった。", "accent": null},
+{"id": 2, "answer": "多岐亡羊", "reading": "たきぼうよう", "meaning": "学問の道が多方面に分かれていて、真理をとらえがたいこと。", "origin": "『列子』説符篇より。逃げた羊を大勢で追ったが、道が何度も分かれていたため見失ってしまったという話から。", "example": "ラーメン屋を選ぶつもりが、塩・味噌・豚骨・家系と調べるうちに多岐亡羊、気づけば閉店時間だった。", "accent": null},
+{"id": 3, "answer": "南船北馬", "reading": "なんせんほくば", "meaning": "各地を忙しく駆け回ること。", "origin": "『淮南子（えなんじ）』より。中国の南部は川が多いので船で、北部は山野が多いので馬で旅をしたことから。", "example": "父は限定プリンを求めて南船北馬、フェリーと乗馬クラブを乗り継いでコンビニへ向かった。", "accent": null},
+{"id": 4, "answer": "悠悠自適", "reading": "ゆうゆうじてき", "meaning": "世俗に煩わされず、のんびり暮らすこと。", "origin": "", "example": "定年後の祖父は悠悠自適、毎朝ハンモックで新聞を読み、昼にはハンモックで昼寝し、夜もハンモックで寝ている。", "accent": null},
+{"id": 5, "answer": "英俊豪傑", "reading": "えいしゅんごうけつ", "meaning": "人並み外れて優れている人物。", "origin": "", "example": "桃太郎の家来オーディションには英俊豪傑が集まったが、結局きびだんご目当ての犬・猿・キジが選ばれた。", "accent": null},
+{"id": 6, "answer": "驚天動地", "reading": "きょうてんどうち", "meaning": "世間をひどく驚かせること。", "origin": "唐の詩人・白居易の詩「李白の墓」の一節（李白の詩文を「天を驚かし地を動かす」とたたえた）より。", "example": "無口な兄が突然「アイドルになる」と宣言し、家族にとってはまさに驚天動地の夕食となった。", "accent": null},
+{"id": 7, "answer": "謹厳実直", "reading": "きんげんじっちょく", "meaning": "慎み深く誠実なこと。", "origin": "", "example": "謹厳実直な校長先生は、文化祭の仮装でも背広にネクタイ姿の「校長先生」に仮装した。", "accent": null},
+{"id": 8, "answer": "沈思黙考", "reading": "ちんしもっこう", "meaning": "黙って深く考えを巡らせること。", "origin": "", "example": "沈思黙考すること三時間、弟が出した結論は「カレーにはやっぱり福神漬け」だった。", "accent": null},
+{"id": 9, "answer": "比翼連理", "reading": "ひよくれんり", "meaning": "男女の間の情愛が深いことのたとえ。", "origin": "唐の白居易の詩「長恨歌」の「天に在りては願わくは比翼の鳥と作（な）り、地に在りては願わくは連理の枝と為（な）らん」より。", "example": "比翼連理の祖父母は、ペアルックどころか入れ歯のケースまでおそろいだ。", "accent": null},
+{"id": 10, "answer": "千紫万紅", "reading": "せんしばんこう", "meaning": "色とりどりに咲く花のこと。", "origin": "", "example": "千紫万紅の花畑で写真を撮ったら、一番目立っていたのは父のショッキングピンクのシャツだった。", "accent": null},
+{"id": 11, "answer": "愛別離苦", "reading": "あいべつりく", "meaning": "愛する人と別れるつらさ、苦しみ。", "origin": "仏教でいう人生の八つの苦しみ（八苦）の一つ。", "example": "愛別離苦とはこのこと、姉は推しの卒業発表を見てティッシュを一箱使い切った。", "accent": null},
+{"id": 12, "answer": "異端邪説", "reading": "いたんじゃせつ", "meaning": "正統とは認められていない思想、学説、信仰。", "origin": "", "example": "「ピザにパイナップルは正義」という説は、我が家では長らく異端邪説とされている。", "accent": null},
+{"id": 13, "answer": "隠忍自重", "reading": "いんにんじちょう", "meaning": "軽率な言動をしないように慎むこと。", "origin": "", "example": "隠忍自重していた猫のタマは、飼い主が寝た瞬間に冷蔵庫の上へ大ジャンプした。", "accent": null},
+{"id": 14, "answer": "延命息災", "reading": "えんめいそくさい", "meaning": "何の災いもなく長生きすること。", "origin": "", "example": "延命息災を祈ってお守りを十個買ったら、重くてカバンの持ち手が壊れた。", "accent": null},
+{"id": 15, "answer": "禍福得喪", "reading": "かふくとくそう", "meaning": "災い、幸運、成功、失敗のこと。", "origin": "", "example": "宝くじの抽選日、禍福得喪を悟った顔の父は、実は券を買い忘れていた。", "accent": null},
+{"id": 16, "answer": "外柔内剛", "reading": "がいじゅうないごう", "meaning": "見た目は穏やかだが、内面は強いこと。", "origin": "", "example": "外柔内剛のおばあちゃんは、にこにこしながら孫の宿題を最後の一問まで見届ける。", "accent": null},
+{"id": 17, "answer": "故事来歴", "reading": "こじらいれき", "meaning": "物事の由来や歴史。", "origin": "", "example": "近所の古いベンチの故事来歴を調べたら、実は先月ホームセンターで買ったものだった。", "accent": null},
+{"id": 18, "answer": "巧遅拙速", "reading": "こうちせっそく", "meaning": "巧みで遅いより、下手でも速い方が良い。", "origin": "『孫子』作戦篇の「兵は拙速を聞くも、未だ巧の久しきを睹（み）ず」に由来するとされる。", "example": "巧遅拙速を信じる兄は、夏休みの絵日記を三十一日分まとめて五分で描き上げた。", "accent": null},
+{"id": 19, "answer": "山紫水明", "reading": "さんしすいめい", "meaning": "山水、自然が清らかで美しいこと。", "origin": "江戸時代の儒学者・頼山陽（らいさんよう）が、京都・鴨川近くの書斎を「山紫水明処」と名付けたことで広まったとされる。", "example": "山紫水明の温泉地に着いたのに、弟はずっと旅館のゲーム機で遊んでいた。", "accent": null},
+{"id": 20, "answer": "時節到来", "reading": "じせつとうらい", "meaning": "ちょうど良い機会がやってくること。", "origin": "", "example": "時節到来とばかりに、冬眠明けのクマ……ではなく父がこたつから出てきた。", "accent": null},
+{"id": 21, "answer": "熟慮断行", "reading": "じゅくりょだんこう", "meaning": "よく考えたうえで、思い切って実行すること。", "origin": "", "example": "熟慮断行の末、妹は三か月悩んだ前髪をついに自分で切り、一センチになった。", "accent": null},
+{"id": 22, "answer": "少壮鋭気", "reading": "しょうそうえいき", "meaning": "年齢が若くて意気盛んなこと。", "origin": "", "example": "少壮鋭気にあふれる新入社員は、初日の朝礼で社長より大きな声で社歌を歌った。", "accent": null},
+{"id": 23, "answer": "信賞必罰", "reading": "しんしょうひつばつ", "meaning": "賞罰を厳格に行うこと。", "origin": "『韓非子』より。手柄には必ず賞を、罪には必ず罰を与えるべきだという法家の考え方。", "example": "我が家は信賞必罰、皿洗いをすればアイス、さぼれば翌日のおかずがピーマン尽くしになる。", "accent": null},
+{"id": 24, "answer": "心頭滅却", "reading": "しんとうめっきゃく", "meaning": "雑念を捨て去り、悟りの境地に入ること。", "origin": "戦国時代、甲斐の恵林寺（えりんじ）の僧・快川紹喜（かいせんじょうき）が焼き討ちの炎の中で「心頭滅却すれば火も自ずから涼し」と唱えたと伝わる。もとは唐の詩人・杜荀鶴（とじゅんかく）の詩句。", "example": "心頭滅却して激辛カレーに挑んだ父は、三口目で「水！」と叫んだ。", "accent": null},
+{"id": 25, "answer": "主客転倒", "reading": "しゅかくてんとう", "meaning": "順序や立場が逆になること。", "origin": "", "example": "犬の散歩のはずが、ぐいぐい引っ張られて主客転倒、どちらが散歩させられているのかわからない。", "accent": null},
+{"id": 26, "answer": "徹頭徹尾", "reading": "てっとうてつび", "meaning": "最初から最後まで。徹底的に。", "origin": "中国の儒学者である朱熹（しゅき）の言行をまとめた『朱子語類（しゅしごるい）』より。", "example": "「ダイエット中だから何も食べない！」と宣言した妹は、徹頭徹尾その信念を貫き、ケーキもラーメンもすべて飲み物だと言い張った。", "accent": null},
+{"id": 27, "answer": "一念発起", "reading": "いちねんほっき", "meaning": "物事を成し遂げようと決心すること。", "origin": "仏教語「一念発起菩提心（ぼだいしん）」より。悟りを求める心を起こすことを表した言葉。", "example": "一念発起してジムに入会した父の最初の目標は、「ジムまで歩いて行くこと」だった。", "accent": null},
+{"id": 28, "answer": "天下泰平", "reading": "てんかたいへい", "meaning": "世の中がよく治まり、平和なこと。", "origin": "", "example": "ネコがこたつで丸くなっている間は、我が家は天下泰平である。", "accent": null},
+{"id": 29, "answer": "同床異夢", "reading": "どうしょういむ", "meaning": "同じ立場でも、考えや方針が異なること。", "origin": "南宋の思想家・陳亮（ちんりょう）が朱熹にあてた書簡の言葉として知られる。", "example": "同じ鍋を囲む兄弟は同床異夢、兄は肉を、弟も肉を狙っていた。", "accent": null},
+{"id": 30, "answer": "薄志弱行", "reading": "はくししゃっこう", "meaning": "意志が弱く、実行力に欠けること。", "origin": "", "example": "薄志弱行の私は、「明日から早起き」と毎晩誓い、毎朝スヌーズを七回押している。", "accent": null},
+{"id": 31, "answer": "栄枯盛衰", "reading": "えいこせいすい", "meaning": "栄えたり衰えたりすること。", "origin": "", "example": "栄枯盛衰は世の習い、去年大流行したタピオカ店の跡地は、今はから揚げ店になっている。", "accent": null},
+{"id": 32, "answer": "物情騒然", "reading": "ぶつじょうそうぜん", "meaning": "世間が騒がしく、落ち着かない様子。", "origin": "", "example": "「給食のプリンが一つ足りない」という噂で、教室は物情騒然となった。", "accent": null},
+{"id": 33, "answer": "面目躍如", "reading": "めんもくやくじょ", "meaning": "評価にふさわしい活躍をすること。", "origin": "", "example": "運動会の綱引きで、普段は無口な用務員さんが一人で三人分の力を出し、面目躍如の大活躍を見せた。", "accent": null},
+{"id": 34, "answer": "優勝劣敗", "reading": "ゆうしょうれっぱい", "meaning": "強い者が勝ち、弱い者が負けること。", "origin": "明治時代、進化論の考えを紹介する中で広まった言葉とされる（加藤弘之『人権新説』など）。", "example": "優勝劣敗の厳しいじゃんけん大会で、毎回グーしか出さない部長はいつも一回戦で消える。", "accent": null},
+{"id": 35, "answer": "和洋折衷", "reading": "わようせっちゅう", "meaning": "日本と西洋の様式をうまく取り混ぜること。", "origin": "", "example": "和洋折衷の朝ごはん、納豆トーストに味噌汁とカフェオレが、なぜか妙に合った。", "accent": null},
+{"id": 36, "answer": "無為自然", "reading": "むいしぜん", "meaning": "何もしないであるがままにまかせること。", "origin": "『老子』の思想。人為を加えず、自然のままにまかせるのが最もよいとする考え方。", "example": "無為自然を気取る兄の部屋は、自然のままにまかせた結果、ジャングルになっている。", "accent": null},
+{"id": 37, "answer": "雲散霧消", "reading": "うんさんむしょう", "meaning": "あとかたもなく消えてしまうこと。", "origin": "", "example": "「お小遣いアップ」の夢は、テストの点数を見た母の一言で雲散霧消した。", "accent": null},
+{"id": 38, "answer": "百戦錬磨", "reading": "ひゃくせんれんま", "meaning": "多くの経験を積んで、鍛えられていること。", "origin": "", "example": "百戦錬磨のスーパーの主婦は、閉店前の半額シールが貼られる瞬間を秒単位で知っている。", "accent": null},
+{"id": 39, "answer": "円転滑脱", "reading": "えんてんかつだつ", "meaning": "物事をすらすらと処理していく様子。", "origin": "", "example": "円転滑脱な司会者は、新郎が名前を言い間違えても笑いに変えて場を盛り上げた。", "accent": null},
+{"id": 40, "answer": "勧善懲悪", "reading": "かんぜんちょうあく", "meaning": "善を奨励し、悪を懲らしめること。", "origin": "『春秋左氏伝』の「悪を懲らして善を勧む」より。", "example": "勧善懲悪の時代劇が大好きな祖父は、悪代官が出てくるとテレビに向かって説教を始める。", "accent": null},
+{"id": 41, "answer": "気宇壮大", "reading": "きうそうだい", "meaning": "心構えや発想が並外れて大きいさま。", "origin": "", "example": "気宇壮大な弟の夏休みの目標は「宇宙人と友達になる」、二番目は「ピーマンを食べる」だった。", "accent": null},
+{"id": 42, "answer": "鬼面仏心", "reading": "きめんぶっしん", "meaning": "見た目は恐ろしいが、心は優しいこと。", "origin": "", "example": "鬼面仏心の柔道部顧問は、怖い顔で「転ぶなよ」と言いながら、部員全員に手作りクッキーを配る。", "accent": null},
+{"id": 43, "answer": "吉凶禍福", "reading": "きっきょうかふく", "meaning": "めでたいことと縁起の悪いこと。", "origin": "", "example": "おみくじで吉凶禍福を占った父は、大吉が出るまで五回引き直した。", "accent": null},
+{"id": 44, "answer": "旧態依然", "reading": "きゅうたいいぜん", "meaning": "物事が昔のままで、少しも進歩がないさま。", "origin": "", "example": "旧態依然の我が家のテレビは、いまだにリモコンが輪ゴムで留めてある。", "accent": null},
+{"id": 45, "answer": "群雄割拠", "reading": "ぐんゆうかっきょ", "meaning": "多くの実力者が勢力を張り、対立する状況。", "origin": "", "example": "昼休みの売店はパン争奪の群雄割拠、焼きそばパンをめぐって各クラスの猛者がにらみ合う。", "accent": null},
+{"id": 46, "answer": "鶏口牛後", "reading": "けいこうぎゅうご", "meaning": "大組織で人に使われるより、小さな組織でも人の上に立つ方が良い。", "origin": "『史記』蘇秦列伝の「寧（むし）ろ鶏口と為るも牛後と為る無かれ」より。", "example": "鶏口牛後を選んだ兄は、大企業の内定を断り、部員二人の「たこ焼き研究会」の会長になった。", "accent": null},
+{"id": 47, "answer": "堅忍不抜", "reading": "けんにんふばつ", "meaning": "断固たる思いで堪え忍び、意志を貫くこと。", "origin": "北宋の文人・蘇軾（そしょく）の「晁錯論（ちょうそろん）」に見える言葉。", "example": "堅忍不抜の精神で、祖母は三十年間毎朝ラジオ体操を続け、町内会で表彰された。", "accent": null},
+{"id": 48, "answer": "孤軍奮闘", "reading": "こぐんふんとう", "meaning": "助けがない中で、一人努力すること。", "origin": "", "example": "文化祭のお化け屋敷は、班員が全員サボって孤軍奮闘、一人で幽霊とお客さん役を兼ねた。", "accent": null},
+{"id": 49, "answer": "一日千秋", "reading": "いちにちせんしゅう", "meaning": "人や物事の到来がとても待ち遠しいこと。", "origin": "『詩経』王風の「一日見ざれば三秋の如し」に由来する。", "example": "通販で頼んだゲームが届くまで一日千秋、弟は玄関の前に寝袋を敷いて待っている。", "accent": null},
+{"id": 50, "answer": "鼓舞激励", "reading": "こぶげきれい", "meaning": "人を励まし、奮い立たせること。", "origin": "", "example": "応援団の鼓舞激励がすごすぎて、選手より先に応援団員が倒れた。", "accent": null},
+{"id": 51, "answer": "呉越同舟", "reading": "ごえつどうしゅう", "meaning": "仲の悪い者同士が、ともに行動すること。", "origin": "『孫子』九地篇より。仲の悪い呉と越の人でも、同じ舟に乗って嵐にあえば助け合うという話から。", "example": "犬猿の仲の兄と姉が、停電した夜だけは呉越同舟、一つの懐中電灯を仲良く分け合った。", "accent": null},
+{"id": 52, "answer": "厚顔無恥", "reading": "こうがんむち", "meaning": "ずうずうしく、恥知らずなさま。", "origin": "", "example": "厚顔無恥なカラスは、ベランダの干し柿を食べ終えると、「おかわり」と言わんばかりに鳴いた。", "accent": null},
+{"id": 53, "answer": "支離滅裂", "reading": "しりめつれつ", "meaning": "筋道が通っていないこと。", "origin": "", "example": "寝ぼけた父の説明は支離滅裂で、「ネクタイが冷蔵庫で会議をしている」と言い出した。", "accent": null},
+{"id": 54, "answer": "質実剛健", "reading": "しつじつごうけん", "meaning": "飾り気がなくまじめで、強くたくましいさま。", "origin": "", "example": "質実剛健を校風とする学校の文化祭は、模擬店のメニューが白米と水だけだった。", "accent": null},
+{"id": 55, "answer": "衆口一致", "reading": "しゅうこういっち", "meaning": "全員の意見が一つに合うこと。", "origin": "", "example": "「今日の夕飯は焼肉がいい人！」と聞いたら、衆口一致で家族全員が手を挙げた。", "accent": null},
+{"id": 56, "answer": "初志貫徹", "reading": "しょしかんてつ", "meaning": "最初の志を、最後まで貫き通すこと。", "origin": "", "example": "「毎日日記を書く」と決めた妹は初志貫徹し、一年分すべて「今日もねむい」と書いた。", "accent": null},
+{"id": 57, "answer": "色即是空", "reading": "しきそくぜくう", "meaning": "万物は単なる現象に過ぎないという考え方。", "origin": "『般若心経』の「色即是空、空即是色」より。", "example": "色即是空を唱えながら、祖父はダイエット中なのに大福を三つ平らげた。", "accent": null},
+{"id": 58, "answer": "神出鬼没", "reading": "しんしゅつきぼつ", "meaning": "鬼神のように自由自在に出没すること。", "origin": "", "example": "神出鬼没の猫は、さっきまで屋根にいたのに、気づけば冷蔵庫の中でくつろいでいた。", "accent": null},
+{"id": 59, "answer": "人面獣心", "reading": "じんめんじゅうしん", "meaning": "顔は人間でも心は獣に等しい、冷酷な人。", "origin": "", "example": "人面獣心の悪役を演じた俳優は、楽屋では子猫の動画を見て泣いていた。", "accent": null},
+{"id": 60, "answer": "尋常一様", "reading": "じんじょういちよう", "meaning": "他と変わるところがなく、ごく普通なさま。", "origin": "", "example": "尋常一様の目覚まし時計では起きない兄のため、母は枕元でフライパンを打ち鳴らす。", "accent": null},
+{"id": 61, "answer": "酔生夢死", "reading": "すいせいむし", "meaning": "ぼんやりと一生を過ごすこと。", "origin": "", "example": "酔生夢死を避けたいと語る兄の休日は、昼過ぎに起きてゲームをし、夜にまた寝る。", "accent": null},
+{"id": 62, "answer": "勢力伯仲", "reading": "せいりょくはくちゅう", "meaning": "力に差がなく、優劣をつけにくいこと。", "origin": "「伯」は長兄、「仲」は次兄の意。兄弟の間に大きな差がないことから、優劣のつけにくいことをいう。", "example": "兄弟の腕相撲は勢力伯仲、三十分たっても決着がつかず、二人とも夕飯をおかわりした。", "accent": null},
+{"id": 63, "answer": "粗衣粗食", "reading": "そいそしょく", "meaning": "質素な生活。貧しい暮らし。", "origin": "", "example": "粗衣粗食を心がける祖父だが、誕生日だけは特上のうな重を二人前注文する。", "accent": null},
+{"id": 64, "answer": "朝令暮改", "reading": "ちょうれいぼかい", "meaning": "命令や法律がすぐに変更されること。またその形相。", "origin": "『漢書』食貨志より。朝に出した命令が夕方にはもう改められるということから。", "example": "朝令暮改の母の献立は、朝「カレー」、昼「シチュー」、夜には「やっぱり鍋」になった。", "accent": null},
+{"id": 65, "answer": "怒髪衝天", "reading": "どはつしょうてん", "meaning": "激怒すること。", "origin": "『史記』廉頗藺相如列伝より。藺相如（りんしょうじょ）が怒りのあまり髪が逆立ち、冠を突き上げたという話から。", "example": "プリンを勝手に食べられた妹は怒髪衝天、ツインテールが本当に逆立って見えた。", "accent": null},
+{"id": 66, "answer": "東奔西走", "reading": "とうほんせいそう", "meaning": "用事であちこち忙しく駆け回ること。", "origin": "", "example": "年末の父は東奔西走、福袋を求めてデパートを五軒はしごした。", "accent": null},
+{"id": 67, "answer": "深山幽谷", "reading": "しんざんゆうこく", "meaning": "人里から遠く離れた奥深い山や谷。", "origin": "", "example": "深山幽谷に分け入った探検隊が見つけたのは、自動販売機だった。", "accent": null},
+{"id": 68, "answer": "当意即妙", "reading": "とういそくみょう", "meaning": "とっさの機転で、その場に対応すること。", "origin": "", "example": "「この壺、いくら？」と聞かれた祖母は当意即妙、「あなたの笑顔と同じくらい」と答えて値切りを封じた。", "accent": null},
+{"id": 69, "answer": "難攻不落", "reading": "なんこうふらく", "meaning": "攻めにくく、容易に落とせないこと。", "origin": "", "example": "難攻不落の母のお財布も、父の日の前だけはなぜかひもがゆるむ。", "accent": null},
+{"id": 70, "answer": "美辞麗句", "reading": "びじれいく", "meaning": "巧みだが真実味に欠ける言葉。", "origin": "", "example": "美辞麗句を並べたラブレターの最後に、兄は「追伸、千円貸して」と書いていた。", "accent": null},
+{"id": 71, "answer": "普遍妥当", "reading": "ふへんだとう", "meaning": "すべてに共通して当てはまること。", "origin": "", "example": "「おなかがすくと機嫌が悪くなる」は、人類に普遍妥当する法則である。", "accent": null},
+{"id": 72, "answer": "附和雷同", "reading": "ふわらいどう", "meaning": "自分の考えがなく、他人に同調すること。", "origin": "『礼記』曲礼上の「雷同する毋（な）かれ」より。雷が鳴ると万物がそれに応じて響くことから、むやみに他人に同調することをいう。", "example": "附和雷同の弟は、兄が「メロンパンが好き」と言った翌日からメロンパンしか食べなくなった。", "accent": null},
+{"id": 73, "answer": "傍若無人", "reading": "ぼうじゃくぶじん", "meaning": "人前でも勝手気ままに振る舞うこと。", "origin": "『史記』刺客列伝より。荊軻（けいか）が友と酒を飲んで歌い、泣いて、傍らに人がいないかのようにふるまったという話から。", "example": "傍若無人な猫は、私の宿題の上に寝そべり、鉛筆を床に落として満足げに鳴いた。", "accent": null},
+{"id": 74, "answer": "安寧秩序", "reading": "あんねいちつじょ", "meaning": "世の中が平和で、落ち着いている様子。", "origin": "", "example": "町内の安寧秩序を守るため、自治会長は毎朝ゴミ捨て場の前でラジオ体操をしている。", "accent": null},
+{"id": 75, "answer": "暗雲低迷", "reading": "あんうんていめい", "meaning": "前途不安な状況が長く続いていること。", "origin": "", "example": "期末テストの答案返却日、我が家には暗雲低迷が漂っていた。", "accent": null},
+{"id": 76, "answer": "遺憾千万", "reading": "いかんせんばん", "meaning": "非常に残念で、心残りであること。", "origin": "", "example": "遺憾千万なことに、楽しみに取っておいたケーキの苺だけが消えていた。", "accent": null},
+{"id": 77, "answer": "一網打尽", "reading": "いちもうだじん", "meaning": "悪人などをひとまとめに捕まえること。", "origin": "『宋史』范純仁伝に見える「一網打尽」の言葉より。網を一度打っただけで魚をすべて捕らえることから。", "example": "母はセール品を一網打尽、カゴ三つ分を抱えてレジに並んだ。", "accent": null},
+{"id": 78, "answer": "闘志満満", "reading": "とうしまんまん", "meaning": "戦おうとする意欲にあふれているさま。", "origin": "", "example": "闘志満満で大食い大会に挑んだ父は、前菜のサラダでおなかいっぱいになった。", "accent": null},
+{"id": 79, "answer": "夏炉冬扇", "reading": "かろとうせん", "meaning": "時期外れで役に立たないもののたとえ。", "origin": "後漢の王充（おうじゅう）『論衡（ろんこう）』より。夏の囲炉裏と冬の扇は役に立たないことから。", "example": "真夏にもらった手編みのマフラーは夏炉冬扇、でも冷房の効きすぎた教室では大活躍した。", "accent": null},
+{"id": 80, "answer": "汗牛充棟", "reading": "かんぎゅうじゅうとう", "meaning": "大量の書籍、蔵書のたとえ。", "origin": "唐の柳宗元（りゅうそうげん）の文に見える言葉。運べば牛が汗をかき、積めば棟木につかえるほど本が多いことから。", "example": "汗牛充棟の祖父の書斎は、本の重みで床が少し傾いている。", "accent": null},
+{"id": 81, "answer": "危機一髪", "reading": "ききいっぱつ", "meaning": "あとわずかで大事に至る、危うい瞬間。", "origin": "", "example": "危機一髪、満員電車のドアにリュックが挟まったが、隣のおばさんが引っ張り出してくれた。", "accent": null},
+{"id": 82, "answer": "金城湯池", "reading": "きんじょうとうち", "meaning": "非常に守りの堅いたとえ。", "origin": "『漢書』に見える言葉。金でできた城と熱湯をたたえた堀（池）のように、守りが堅いことから。", "example": "冷蔵庫の奥の母の高級チョコは金城湯池、扉にパスワード付きの付箋まで貼ってある。", "accent": null},
+{"id": 83, "answer": "軽挙妄動", "reading": "けいきょもうどう", "meaning": "何も考えないで軽率に行動すること。", "origin": "", "example": "軽挙妄動を戒めた直後、課長は自分のコーヒーにしょうゆを入れていた。", "accent": null},
+{"id": 84, "answer": "孤城落日", "reading": "こじょうらくじつ", "meaning": "栄えていたものが落ちぶれて心細いさま。", "origin": "唐の詩人・王維の詩に見える言葉。", "example": "閉店セールで客が一人もいない遊園地は孤城落日、観覧車だけがゆっくり回っていた。", "accent": null},
+{"id": 85, "answer": "五里霧中", "reading": "ごりむちゅう", "meaning": "事情がわからず、判断に苦しむこと。", "origin": "『後漢書』張楷伝より。張楷（ちょうかい）が道術で五里四方に霧を起こしたという話から。", "example": "初めて家具を組み立てた父は説明書が読めず五里霧中、ネジが十本余った。", "accent": null},
+{"id": 86, "answer": "巧言令色", "reading": "こうげんれいしょく", "meaning": "口先や顔つきだけで愛想良くして、人にこびへつらうこと。", "origin": "『論語』学而篇の「巧言令色、鮮（すく）なし仁」より。", "example": "巧言令色のセールスマンは、壺を売りに来て、帰りには祖母に漬物を持たされていた。", "accent": null},
+{"id": 87, "answer": "馬耳東風", "reading": "ばじとうふう", "meaning": "人の言うことを少しも気にかけないたとえ。", "origin": "唐の詩人・李白の詩に見える言葉。春風（東風）が馬の耳に吹いても、馬は何も感じないことから。", "example": "「部屋を片付けなさい」という母の声も弟には馬耳東風、ヘッドホンで音楽を聴いている。", "accent": null},
+{"id": 88, "answer": "思慮分別", "reading": "しりょふんべつ", "meaning": "慎重に道理に沿って正しく判断すること。", "origin": "", "example": "思慮分別のある大人を自称する父は、ガチャガチャで同じキーホルダーを十個引いた。", "accent": null},
+{"id": 89, "answer": "七転八倒", "reading": "しちてんばっとう", "meaning": "激しい苦痛でのたうちまわること。", "origin": "", "example": "足がつった兄は七転八倒、布団の上でエビのように跳ね回った。", "accent": null},
+{"id": 90, "answer": "首尾一貫", "reading": "しゅびいっかん", "meaning": "行動や方針が、最後まで変わらないこと。", "origin": "", "example": "首尾一貫して「将来は猫になりたい」と言い続ける妹は、今日も日向で丸くなっている。", "accent": null},
+{"id": 91, "answer": "笑止千万", "reading": "しょうしせんばん", "meaning": "笑いが止まらないほどばかげていること。", "origin": "", "example": "「宿題をやったけど家に忘れた」という兄の言い訳は、先生には笑止千万だった。", "accent": null},
+{"id": 92, "answer": "深謀遠慮", "reading": "しんぼうえんりょ", "meaning": "深く考えて将来を見通し、計画すること。", "origin": "前漢の賈誼（かぎ）「過秦論（かしんろん）」に見える言葉。", "example": "深謀遠慮の母は、遠足のおやつを前日の夜から冷凍し、当日ちょうど溶けるよう計算している。", "accent": null},
+{"id": 93, "answer": "金科玉条", "reading": "きんかぎょくじょう", "meaning": "最も大事な守るべき決まりや法律、教え。", "origin": "前漢の揚雄（ようゆう）の文に見える言葉。黄金や玉のように貴重な法律や規則のこと。", "example": "「お風呂上がりのアイスは一日一個」が我が家の金科玉条である。", "accent": null},
+{"id": 94, "answer": "真実一路", "reading": "しんじついちろ", "meaning": "誠実一筋に進むこと。", "origin": "山本有三の小説『真実一路』（1935年）の題名で広く知られるようになった。", "example": "真実一路の祖父は、テレビのクイズにも毎回正直に「わからん」と答える。", "accent": null},
+{"id": 95, "answer": "青息吐息", "reading": "あおいきといき", "meaning": "ため息を発するほど苦しんでいる様子。", "origin": "", "example": "月末の父は財布を見て青息吐息、お昼はもやし炒め一択だ。", "accent": null},
+{"id": 96, "answer": "朝三暮四", "reading": "ちょうさんぼし", "meaning": "目先の違いにとらわれて、だまされること。", "origin": "『列子』黄帝篇・『荘子』斉物論より。猿にトチの実を「朝三つ、暮れに四つ」与えると言うと怒り、「朝四つ、暮れに三つ」にすると喜んだという話から。", "example": "お小遣いを「月千円」から「週二百五十円」に変えたら、弟は朝三暮四で大喜びした。", "accent": null},
+{"id": 97, "answer": "刻苦勉励", "reading": "こっくべんれい", "meaning": "苦しみにたえ、仕事や勉学に励むこと。", "origin": "", "example": "刻苦勉励して漢検に挑んだ父は、試験会場を間違えて隣の英検会場に座っていた。", "accent": null},
+{"id": 98, "answer": "薄利多売", "reading": "はくりたばい", "meaning": "利益を薄くして多く売ること。", "origin": "", "example": "薄利多売のたこ焼き屋は、一個おまけしすぎて店主の分がなくなった。", "accent": null},
+{"id": 99, "answer": "百鬼夜行", "reading": "ひゃっきやこう", "meaning": "悪人たちがのさばり、悪事を働くこと。", "origin": "平安時代の説話集などに見える、夜中に鬼や妖怪が列をなして歩くという言い伝えから。", "example": "深夜のコンビニ前は百鬼夜行、と思ったらハロウィン帰りの若者たちだった。", "accent": null},
+{"id": 100, "answer": "一挙両得", "reading": "いっきょりょうとく", "meaning": "一つの行動で、二つの利益を得ること。", "origin": "", "example": "一挙両得を狙って、兄は英単語を覚えながら腹筋をしたが、どちらも十回で終わった。", "accent": null},
+{"id": 101, "answer": "奮励努力", "reading": "ふんれいどりょく", "meaning": "気力を奮い起こし、精一杯励むこと。", "origin": "日露戦争の日本海海戦で、東郷平八郎が掲げさせた信号文「皇国の興廃この一戦にあり、各員一層奮励努力せよ」で知られる。", "example": "奮励努力を誓った弟は、夏休みの宿題を最終日の夜に一気に片付けた。", "accent": null},
+{"id": 102, "answer": "粉骨砕身", "reading": "ふんこつさいしん", "meaning": "力の限り努力すること。", "origin": "", "example": "粉骨砕身の努力で作った砂のお城は、波一回で消えた。", "accent": null},
+{"id": 103, "answer": "無為徒食", "reading": "むいとしょく", "meaning": "何もしないでぶらぶら過ごすこと。", "origin": "", "example": "無為徒食の飼い犬は、一日二十時間眠り、残りの四時間は食べている。", "accent": null},
+{"id": 104, "answer": "勇猛果敢", "reading": "ゆうもうかかん", "meaning": "勇ましく思い切りよく行動するさま。", "origin": "", "example": "勇猛果敢に台所のゴキブリへ立ち向かった父は、殺虫剤と間違えて芳香剤を噴射した。", "accent": null},
+{"id": 105, "answer": "悪逆無道", "reading": "あくぎゃくむどう", "meaning": "人として行う道に、はなはだしくむいた悪い行い。", "origin": "", "example": "悪逆無道の大魔王を倒した勇者は、宿屋のお代を払い忘れていた。", "accent": null},
+{"id": 106, "answer": "悪事千里", "reading": "あくじせんり", "meaning": "とかく悪い行いや評判は、すぐに広範囲に知れわたるということ。", "origin": "「好事門を出でず、悪事千里を行く」（よい行いはなかなか世間に知られず、悪い行いはすぐ遠くまで伝わる）という中国の言葉から。", "example": "こっそりつまみ食いしたことは悪事千里、夕方には親戚中に知れわたっていた。", "accent": null},
+{"id": 107, "answer": "悪戦苦闘", "reading": "あくせんくとう", "meaning": "強敵に対する非常に苦しい戦い。転じて、困難に打ち勝とうと苦労しながら努力すること。", "origin": "", "example": "悪戦苦闘の末に開けたジャムのふたは、母が一瞬でひねって開けられた。", "accent": null},
+{"id": 108, "answer": "悪口雑言", "reading": "あっこうぞうごん", "meaning": "口にまかせていろいろな悪口を言うこと。また、その言葉。", "origin": "", "example": "オウムのピーちゃんは、兄のゲーム中の悪口雑言をすっかり覚えてしまった。", "accent": null},
+{"id": 109, "answer": "意気消沈", "reading": "いきしょうちん", "meaning": "元気がなくしょげ返っていること。失望してがっかりしていること。", "origin": "", "example": "宝くじの当選番号を確かめた父は、一つ違いで意気消沈した。", "accent": null},
+{"id": 110, "answer": "意気衝天", "reading": "いきしょうてん", "meaning": "元気がよく天を衝かんばかりに、勢いがあること。意気込み盛んなこと。", "origin": "", "example": "テストで初めて百点を取った弟は意気衝天、答案をラミネート加工して玄関に飾った。", "accent": null},
+{"id": 111, "answer": "意気投合", "reading": "いきとうごう", "meaning": "心持ちが互いにぴったりと合う、一つになること。", "origin": "", "example": "初対面の祖父と留学生は、二人とも演歌好きで意気投合、カラオケで三時間歌い続けた。", "accent": null},
+{"id": 112, "answer": "意気揚揚", "reading": "いきようよう", "meaning": "勢いがあり、威勢がよいさま。誇らしげにふるまうこと。", "origin": "『史記』管晏列伝より。斉の宰相・晏子（あんし）の御者が、主人の馬車を操ることを得意げにしていた様子から。", "example": "逆上がりができた妹は意気揚揚と帰宅し、晩ごはん中も三回逆上がりの話をした。", "accent": null},
+{"id": 113, "answer": "異口同音", "reading": "いくどうおん", "meaning": "大勢の人が口をそろえて同じことを言う。意見が一致する。", "origin": "", "example": "「お母さんのハンバーグが一番！」と、家族は異口同音に叫んだ。", "accent": null},
+{"id": 114, "answer": "以心伝心", "reading": "いしんでんしん", "meaning": "考えや思っていることが言葉を使わずに互いの心から心に伝わること。", "origin": "禅宗の言葉。仏法の真髄は、文字や言葉によらず、師の心から弟子の心へ直接伝えるという意味から。", "example": "以心伝心の夫婦は、夫がリモコンを探すと、妻は黙ってソファのすき間を指さす。", "accent": null},
+{"id": 115, "answer": "異体同心", "reading": "いたいどうしん", "meaning": "体は別々でも心は固く一つに結ばれていること。それほどに関係が深いこと。", "origin": "", "example": "双子の兄弟は異体同心、別々の店で同じ柄のシャツを買って帰ってきた。", "accent": null},
+{"id": 116, "answer": "一病息災", "reading": "いちびょうそくさい", "meaning": "多少病気がちの人のほうが、無理をせず長生きするということ。", "origin": "「無病息災」をもじって作られた言葉とされる。", "example": "一病息災の祖父は、腰痛を理由に無理をしないので、町内一長生きしそうだ。", "accent": null},
+{"id": 117, "answer": "一部始終", "reading": "いちぶしじゅう", "meaning": "物事の始めから終わりまで、すべてのこと。", "origin": "一部の書物の初めから終わりまで、という意味から。", "example": "妹は遠足の一部始終を話し始め、話が終わったのは翌日の朝だった。", "accent": null},
+{"id": 118, "answer": "一喜一憂", "reading": "いっきいちゆう", "meaning": "状況が変化するたびに喜んだり心配したりすること。", "origin": "", "example": "株価のニュースに一喜一憂する父は、持っている株が一株だけである。", "accent": null},
+{"id": 119, "answer": "一騎当千", "reading": "いっきとうせん", "meaning": "一人の騎兵が千人の敵を相手に戦うほど強い力を持っていること。", "origin": "", "example": "一騎当千のおばあちゃんは、餅つき大会で若者十人分の餅をついた。", "accent": null},
+{"id": 120, "answer": "一挙一動", "reading": "いっきょいちどう", "meaning": "一つ一つのふるまい、動作。または、ちょっとしたしぐさのこと。", "origin": "", "example": "転校生の一挙一動にクラスが注目する中、彼は給食の牛乳を一気飲みした。", "accent": null},
+{"id": 121, "answer": "一件落着", "reading": "いっけんらくちゃく", "meaning": "事件や課題など、物事が解決すること。", "origin": "", "example": "行方不明だった父の眼鏡は、頭の上で見つかり一件落着した。", "accent": null},
+{"id": 122, "answer": "一視同仁", "reading": "いっしどうじん", "meaning": "差別することなく、すべての人を見て愛すること。区別なく扱うこと。", "origin": "唐の韓愈（かんゆ）の文章「原人」に見える言葉。", "example": "一視同仁の猫は、家族全員に平等にそっけない。", "accent": null},
+{"id": 123, "answer": "一石二鳥", "reading": "いっせきにちょう", "meaning": "一つの石を投げて二羽の鳥を撃ち落とす意から、一つの行為で二つの利益をあげること。", "origin": "英語のことわざ \"Kill two birds with one stone\" を訳した言葉とされる。", "example": "犬の散歩ついでに焼き芋を買えたので一石二鳥、犬も芋もほくほくだった。", "accent": null},
+{"id": 124, "answer": "一刀両断", "reading": "いっとうりょうだん", "meaning": "一太刀で物を真っ二つに切ること。すばやく物事を処理したり、解決したりすること。", "origin": "", "example": "一刀両断に「却下」と言った母に、兄のゲーム機購入計画は散った。", "accent": null},
+{"id": 125, "answer": "意味深長", "reading": "いみしんちょう", "meaning": "人の言動や詩文などが奥深い意味を持っていること。裏に別の意味が隠されていること。", "origin": "", "example": "「明日は大事な話がある」という父の意味深長な一言は、焼肉に行く提案だった。", "accent": null},
+{"id": 126, "answer": "因果応報", "reading": "いんがおうほう", "meaning": "過去における善悪の業に応じて現在における幸不幸の果報を生ずること。", "origin": "仏教の言葉。善い行いには善い報い、悪い行いには悪い報いがあるという考え方。", "example": "弟のおやつを隠した姉は、因果応報、自分のおやつを犬に食べられた。", "accent": null},
+{"id": 127, "answer": "有為転変", "reading": "ういてんぺん", "meaning": "この世の中は激しく移り変わり、しばらくも一定の状態にないこと。この世が無常であることのたとえ。", "origin": "仏教の言葉。「有為」は因縁によって生じたこの世の一切のものを指し、それらは常に移り変わるという考え方から。", "example": "有為転変の世の中、昨日まで最新だった兄のスマホは、今日もう型落ちになった。", "accent": null},
+{"id": 128, "answer": "遠交近攻", "reading": "えんこうきんこう", "meaning": "遠くの国と仲良くし、近くの国を挟み撃ちして攻める策。", "origin": "『史記』范雎（はんしょ）列伝より。戦国時代、范雎が秦の昭王に説いた外交策。", "example": "遠交近攻の作戦で、弟は遠くの祖父母に甘えておもちゃを買ってもらい、近くの両親には内緒にした。", "accent": null},
+{"id": 129, "answer": "汚名返上", "reading": "おめいへんじょう", "meaning": "着せられた汚名をそそいで、名誉を回復すること。", "origin": "", "example": "前回の料理で鍋を焦がした父は、汚名返上を誓い、今回はフライパンを焦がした。", "accent": null},
+{"id": 130, "answer": "温故知新", "reading": "おんこちしん", "meaning": "昔のことをたずね求めて新たな事柄の意味を知ること。", "origin": "『論語』為政篇の「故（ふる）きを温（たず）ねて新しきを知れば、以（もっ）て師と為るべし」より。", "example": "温故知新、祖母のアルバムを見て、流行の服が四十年前にもあったと知った。", "accent": null},
+{"id": 131, "answer": "音吐朗朗", "reading": "おんとろうろう", "meaning": "声などが朗らかでさわやかなこと。", "origin": "", "example": "音吐朗朗と校歌を歌う校長先生の声で、体育館の窓ガラスが震えた。", "accent": null},
+{"id": 132, "answer": "外郭団体", "reading": "がいかくだんたい", "meaning": "国や地方の公共機関・組織の外部にあり、それらの機関と連携しながらその活動や事業を支援する団体のこと。", "origin": "", "example": "外郭団体の説明会で配られたパンフレットは、分厚すぎて枕にちょうどよかった。", "accent": null},
+{"id": 133, "answer": "皆既日食", "reading": "かいきにっしょく", "meaning": "太陽と地球の間に月が来ることで、地球から見て太陽が月によって隠れる現象。", "origin": "「皆」も「既」も「すべて・ことごとく尽きる」の意で、太陽が完全に隠れることを表す。", "example": "皆既日食の瞬間、ニワトリが朝と勘違いして鳴き出した。", "accent": null},
+{"id": 134, "answer": "怪力乱神", "reading": "かいりょくらんしん", "meaning": "人知の及ばないふしぎな現象や超自然的な物事の存在のたとえ。", "origin": "『論語』述而篇の「子は怪力乱神を語らず」より。", "example": "怪力乱神を信じない兄も、夜中に冷蔵庫が「ブーン」と鳴ると布団にもぐる。", "accent": null},
+{"id": 135, "answer": "花鳥風月", "reading": "かちょうふうげつ", "meaning": "自然の美しい景色や風流な遊びのこと。", "origin": "", "example": "花鳥風月を愛でる祖父の俳句は、なぜか毎回最後が「腹が減る」で終わる。", "accent": null},
+{"id": 136, "answer": "活殺自在", "reading": "かっさつじざい", "meaning": "他人を自分の思いどおりに扱うこと。", "origin": "", "example": "活殺自在の母は、「宿題が終わったら」の一言で、子ども三人を思いのままに動かす。", "accent": null},
+{"id": 137, "answer": "我田引水", "reading": "がでんいんすい", "meaning": "自分の田へ水を引くこと。転じて、自分の都合のよいように言ったり、したりすること。", "origin": "", "example": "我田引水の兄は、「家族会議の結果」と言って、夕飯を自分の好物のカレーに決めた。", "accent": null},
+{"id": 138, "answer": "感慨無量", "reading": "かんがいむりょう", "meaning": "言葉では言い表せないほど、胸いっぱいにしみじみと感じ入ること。", "origin": "", "example": "小学校の同窓会で、担任だった先生は感慨無量、名前を全員分間違えた。", "accent": null},
+{"id": 139, "answer": "緩急自在", "reading": "かんきゅうじざい", "meaning": "速度などをゆるめたり、引き締めたり思いのままにすること。", "origin": "", "example": "緩急自在のピッチャーである祖父は、孫とのキャッチボールで魔球を投げて腰を痛めた。", "accent": null},
+{"id": 140, "answer": "気炎万丈", "reading": "きえんばんじょう", "meaning": "炎が燃え上がるように、大いに意気を上げること。", "origin": "", "example": "気炎万丈の父は「今年こそ富士山に登る」と宣言し、翌朝寝坊した。", "accent": null},
+{"id": 141, "answer": "危急存亡", "reading": "ききゅうそんぼう", "meaning": "危険が迫っていて、生き残るか滅びるかのせとぎわのこと。", "origin": "三国時代、蜀の諸葛亮（しょかつりょう）の「出師表（すいしのひょう）」の「此（こ）れ誠に危急存亡の秋（とき）なり」より。", "example": "スマホの電池残量一パーセント、地図アプリが頼りの父にとって危急存亡の秋だった。", "accent": null},
+{"id": 142, "answer": "起死回生", "reading": "きしかいせい", "meaning": "今にも死にそうな病人を生き返らせること。また、崩壊寸前の状態から好転させること。", "origin": "", "example": "九回裏、起死回生のホームランを打ったのは、ベンチで居眠りしていた代打の監督だった。", "accent": null},
+{"id": 143, "answer": "喜色満面", "reading": "きしょくまんめん", "meaning": "うれしそうな表情が顔いっぱいにあふれているような様子。", "origin": "", "example": "喜色満面で帰ってきた父の手には、商店街の福引きで当てたティッシュ一年分があった。", "accent": null},
+{"id": 144, "answer": "疑心暗鬼", "reading": "ぎしんあんき", "meaning": "疑う心があると、なんでもないことまで怪しく感じられるようになること。", "origin": "『列子』説符篇の話から生まれた「疑心暗鬼を生ず」という言葉より。斧をなくした男が隣家の子を疑うと、そのしぐさすべてが怪しく見えたという話。", "example": "疑心暗鬼になった兄は、プリンが消えた犯人を家族全員に聞き込みしたが、犯人は寝ぼけた自分だった。", "accent": null},
+{"id": 145, "answer": "奇想天外", "reading": "きそうてんがい", "meaning": "普通の人には思いつかないような、きわめて奇抜な考え。", "origin": "", "example": "弟の自由研究は奇想天外、「冷蔵庫の電気が本当に消えるか」を中に入って確かめようとした。", "accent": null},
+{"id": 146, "answer": "喜怒哀楽", "reading": "きどあいらく", "meaning": "喜び、怒り、哀しみ、楽しみのこと。", "origin": "儒教の経典『中庸』に見える言葉。", "example": "喜怒哀楽が顔に出やすい父は、トランプのババ抜きで一度も勝ったことがない。", "accent": null},
+{"id": 147, "answer": "急転直下", "reading": "きゅうてんちょっか", "meaning": "事態や情勢が急に変化し、物事が解決・決着に向かうこと。", "origin": "", "example": "三時間もめた家族旅行の行き先会議は、母の「温泉」の一言で急転直下決まった。", "accent": null},
+{"id": 148, "answer": "狂喜乱舞", "reading": "きょうきらんぶ", "meaning": "非常に喜ぶさま。", "origin": "", "example": "合格発表で自分の番号を見つけた兄は狂喜乱舞、隣の知らないおじさんと抱き合った。", "accent": null},
+{"id": 149, "answer": "器用貧乏", "reading": "きようびんぼう", "meaning": "器用なためにあれこれ手を出して一事に徹底できず、大成しないこと。", "origin": "", "example": "器用貧乏の父は、ギターも料理も手品も少しずつできるが、どれも途中で終わる。", "accent": null},
+{"id": 150, "answer": "玉石混交", "reading": "ぎょくせきこんこう", "meaning": "すぐれたものと劣ったものが入りまじっていること。", "origin": "晋の葛洪（かっこう）の『抱朴子（ほうぼくし）』に見える言葉。", "example": "フリーマーケットは玉石混交、ビンテージの名品の横に、使いかけの消しゴムが売られていた。", "accent": null},
+{"id": 151, "answer": "挙措動作", "reading": "きょそどうさ", "meaning": "身のこなし、立ち居振る舞いのこと。", "origin": "", "example": "お茶の先生の挙措動作は美しいが、正座から立ち上がる時だけ「よっこらしょ」と言う。", "accent": null},
+{"id": 152, "answer": "議論百出", "reading": "ぎろんひゃくしゅつ", "meaning": "多くの意見が議論されること。", "origin": "", "example": "クラスの出し物を決める会議は議論百出、「お化け屋敷」と「カフェ」が合体して「お化けカフェ」になった。", "accent": null},
+{"id": 153, "answer": "金城鉄壁", "reading": "きんじょうてっぺき", "meaning": "金や鉄で造ったような城壁を持つ、堅固な城のたとえ。転じて物事が非常に堅固であることのたとえ。", "origin": "", "example": "金城鉄壁の守りを誇るゴールキーパーも、ボールではなく自分の靴が飛んでいった。", "accent": null},
+{"id": 154, "answer": "空前絶後", "reading": "くうぜんぜつご", "meaning": "過去に例がなく、この先も起こりそうにない非常にめずらしいさま。", "origin": "", "example": "商店街の大売り出しは空前絶後の安さ、と書いてあったが、毎月やっている。", "accent": null},
+{"id": 155, "answer": "空中楼閣", "reading": "くうちゅうろうかく", "meaning": "空中に築いた立派な建物の意で、本来は「しんきろう」のこと。転じて、現実性のないことのたとえ。", "origin": "", "example": "「宝くじが当たったら島を買う」という父の計画は空中楼閣、まだ宝くじを買っていない。", "accent": null},
+{"id": 156, "answer": "九分九厘", "reading": "くぶくりん", "meaning": "ほぼ間違いないこと。ほとんど確実にそうなること。", "origin": "", "example": "弟が今日も寝坊するのは九分九厘間違いない、と思ったら、母が先に寝坊した。", "accent": null},
+{"id": 157, "answer": "鯨飲馬食", "reading": "げいいんばしょく", "meaning": "鯨のように多くの酒を飲み、馬のように多く食べるさま。", "origin": "", "example": "鯨飲馬食の相撲部員が去った後、食べ放題の店には米粒一つ残っていなかった。", "accent": null},
+{"id": 158, "answer": "言行一致", "reading": "げんこういっち", "meaning": "言葉と行動が食い違わないこと。", "origin": "", "example": "「早寝早起き」を説く校長先生は言行一致、朝四時にはもう校門の前に立っている。", "accent": null},
+{"id": 159, "answer": "権謀術数", "reading": "けんぼうじゅっすう", "meaning": "人をあざむくたくらみやはかりごと。", "origin": "", "example": "権謀術数を巡らせた弟は、母の誕生日にプレゼントを渡し、その場でお小遣いの値上げを交渉した。", "accent": null},
+{"id": 160, "answer": "行雲流水", "reading": "こううんりゅうすい", "meaning": "空を行く雲と流れ行く水。物事にとらわれず自然のままに身をゆだねて生きること。", "origin": "北宋の蘇軾（そしょく）の文に、文章のあり方を「行雲流水のごとし」とたとえた言葉が見える。", "example": "行雲流水の旅に出た祖父は、行き先を決めずに電車に乗り、気づけば家の最寄り駅に戻っていた。", "accent": null},
+{"id": 161, "answer": "好機到来", "reading": "こうきとうらい", "meaning": "ちょうどよい機会がくること。絶好の機会に恵まれること。", "origin": "", "example": "好機到来、母が電話で長話を始めた瞬間に、弟はおやつ棚へ忍び寄った。", "accent": null},
+{"id": 162, "answer": "公私混同", "reading": "こうしこんどう", "meaning": "仕事などと公的にかかわっていることと、プライベートなことを区別しないこと。", "origin": "", "example": "会社の会議室で家族写真を飾った課長は、公私混同だと部下に注意された。", "accent": null},
+{"id": 163, "answer": "公序良俗", "reading": "こうじょりょうぞく", "meaning": "公共の秩序と、善良な風俗。", "origin": "", "example": "公序良俗に反しない範囲でと言われたので、兄は文化祭でパジャマ姿のカフェを開いた。", "accent": null},
+{"id": 164, "answer": "公平無私", "reading": "こうへいむし", "meaning": "すべての判断、行動などがかたよらず、個人的な感情、利益などをとりまぜないさま。", "origin": "", "example": "公平無私の母はケーキを定規で測って切るが、自分の分だけなぜか一回り大きい。", "accent": null},
+{"id": 165, "answer": "高論卓説", "reading": "こうろんたくせつ", "meaning": "すぐれた意見、論説のこと。", "origin": "", "example": "高論卓説を述べた教授の講義は、終わってみると「睡眠は大事」という内容だった。", "accent": null},
+{"id": 166, "answer": "古今東西", "reading": "ここんとうざい", "meaning": "いつでも、どこでも。", "origin": "", "example": "古今東西、テスト前に部屋の掃除をしたくなるのは人類共通の現象である。", "accent": null},
+{"id": 167, "answer": "古今無双", "reading": "ここんむそう", "meaning": "昔から今まで、他に比べるものがないこと。", "origin": "", "example": "古今無双の早食いを誇る兄は、カップ麺が三分たつ前に食べ終えた。", "accent": null},
+{"id": 168, "answer": "固定観念", "reading": "こていかんねん", "meaning": "心中にとり固まっていて、その人の思考や行動をしばるような考え。", "origin": "", "example": "「ポテトチップスは手で食べるもの」という固定観念を破り、妹は箸で優雅に食べている。", "accent": null},
+{"id": 169, "answer": "孤立無援", "reading": "こりつむえん", "meaning": "独りぼっちで、だれも手を差しのべない状態。", "origin": "", "example": "夏休み最終日、宿題が手つかずの弟は孤立無援、家族は全員見て見ぬふりをした。", "accent": null},
+{"id": 170, "answer": "困苦欠乏", "reading": "こんくけつぼう", "meaning": "生活に必要なものが不足して苦しむこと。", "origin": "", "example": "困苦欠乏に耐えた雪山の登山隊は、下山後のラーメンで全員泣いた。", "accent": null},
+{"id": 171, "answer": "言語道断", "reading": "ごんごどうだん", "meaning": "あまりのひどさにあきれて言葉も出ない、言葉にならないこと。", "origin": "仏教の言葉。仏法の奥深い真理は言葉で言い表すことができない、という意味から。", "example": "兄が私の漫画の最終巻を先に読んで結末をばらしたのは、言語道断の行いである。", "accent": null},
+{"id": 172, "answer": "才色兼備", "reading": "さいしょくけんび", "meaning": "すぐれた才知と美しさを兼ね備えている女性。", "origin": "", "example": "才色兼備のアナウンサーは、ニュース原稿は完璧だが、早口言葉だけは苦手だ。", "accent": null},
+{"id": 173, "answer": "三寒四温", "reading": "さんかんしおん", "meaning": "冬から初春にかけて、寒い日が三日続き、暖かい日が四日続き、これを繰り返すこと。", "origin": "中国北東部や朝鮮半島の冬の気候を表した言葉として知られる。", "example": "三寒四温のこの時期、父は毎朝コートを着るか迷って遅刻しかける。", "accent": null},
+{"id": 174, "answer": "四海兄弟", "reading": "しかいけいてい", "meaning": "世界中の人々は兄弟のように仲良くすべきだということ。", "origin": "『論語』顔淵篇の「四海の内、皆兄弟なり」より。", "example": "四海兄弟の精神で、近所の猫たちは毎日違う家でエサをもらっている。", "accent": null},
+{"id": 175, "answer": "自画自賛", "reading": "じがじさん", "meaning": "自分で自分のことをほめること。", "origin": "自分で描いた絵に、自分で賛（絵に添える詩文）を書くことから。", "example": "手作りのカレーを「三ツ星レベル」と自画自賛した父だが、家族は無言だった。", "accent": null},
+{"id": 176, "answer": "試行錯誤", "reading": "しこうさくご", "meaning": "試みと失敗をくりかえしながら適切な方法を見つけること。", "origin": "英語の \"trial and error\" を訳した言葉とされる。", "example": "試行錯誤を重ねた兄の目玉焼きは、ついに「目玉」だけが残る謎の料理になった。", "accent": null},
+{"id": 177, "answer": "事実無根", "reading": "じじつむこん", "meaning": "根も葉もないこと。でたらめ。", "origin": "", "example": "「兄が私のプリンを食べた」という噂は事実無根、犯人は犬だった。", "accent": null},
+{"id": 178, "answer": "志操堅固", "reading": "しそうけんご", "meaning": "正しいと信じる主義や志がしっかりまもられていて、容易にはくずれないこと。", "origin": "", "example": "志操堅固な祖父は、四十年間同じ床屋で同じ髪型にしている。", "accent": null},
+{"id": 179, "answer": "舌先三寸", "reading": "したさきさんずん", "meaning": "口先でうまいことを言って誠実さに欠く、中身がないこと。", "origin": "", "example": "舌先三寸で買わされた健康器具は、今では洗濯物干しとして大活躍している。", "accent": null},
+{"id": 180, "answer": "失望落胆", "reading": "しつぼうらくたん", "meaning": "希望を失って、非常にがっかりすること。", "origin": "", "example": "運動会が雨で中止と聞いて失望落胆した弟は、てるてる坊主を逆さに吊るした自分を責めた。", "accent": null},
+{"id": 181, "answer": "四分五裂", "reading": "しぶんごれつ", "meaning": "ばらばらに分裂していること。秩序が乱れている様子。", "origin": "", "example": "家族旅行の行き先は四分五裂、海・山・温泉・遊園地と四人の意見が分かれた。", "accent": null},
+{"id": 182, "answer": "自暴自棄", "reading": "じぼうじき", "meaning": "失敗や不満などがあって将来に希望が持てず、自分自身を粗末にし、すてばちになること。", "origin": "『孟子』離婁（りろう）上篇に見える「自ら暴（そこな）う者」「自ら棄つる者」より。", "example": "テストの点が悪くて自暴自棄になった兄は、その夜ケーキを丸ごと一つ食べた。", "accent": null},
+{"id": 183, "answer": "縦横無尽", "reading": "じゅうおうむじん", "meaning": "自由自在で、思う存分にふるまうこと。", "origin": "", "example": "縦横無尽に部屋を駆け回る子猫に、こたつのコードは何度も抜かれた。", "accent": null},
+{"id": 184, "answer": "終始一貫", "reading": "しゅうしいっかん", "meaning": "主張や態度、行動が始めから終わりまで変わらないこと。", "origin": "", "example": "終始一貫してカレーを推す兄は、誕生日もクリスマスもカレーを希望する。", "accent": null},
+{"id": 185, "answer": "衆人環視", "reading": "しゅうじんかんし", "meaning": "多くの人が取り巻いて見ていること。物事が公の下にさらされることについてもいう。", "origin": "", "example": "衆人環視の中、校長先生はスピーチの途中で入れ歯を落とした。", "accent": null},
+{"id": 186, "answer": "取捨選択", "reading": "しゅしゃせんたく", "meaning": "必要なものを取り、不必要なものを捨てて選び取ること。", "origin": "", "example": "引っ越しの荷造りで取捨選択に迷った母は、結局全部持って行った。", "accent": null},
+{"id": 187, "answer": "順風満帆", "reading": "じゅんぷうまんぱん", "meaning": "帆に追い風を一杯受けて、船が快調に進むこと。転じて物事がすべて順調に進むこと。", "origin": "", "example": "順風満帆だった父のダイエットは、年末の忘年会シーズンで沈没した。", "accent": null},
+{"id": 188, "answer": "上意下達", "reading": "じょういかたつ", "meaning": "上の者の命令や意志を、下の者にもれなく徹底させること。", "origin": "", "example": "上意下達が徹底したわが家では、母の「掃除」の一言で、三分後には全員が雑巾を持っている。", "accent": null},
+{"id": 189, "answer": "小心翼翼", "reading": "しょうしんよくよく", "meaning": "気が小さくて、いつもびくびく恐れているさま。", "origin": "『詩経』大雅に見える言葉。本来は慎み深く、細かいことにまで気を配るさまをいう。", "example": "小心翼翼の弟は、くじ引きで一等が当たると、ドッキリだと思って逃げ出した。", "accent": null},
+{"id": 190, "answer": "焦熱地獄", "reading": "しょうねつじごく", "meaning": "仏教の地獄の一つ。生前に殺人や盗み、飲酒などの罪を犯したものが落とされる。", "origin": "仏教で説く八大地獄の一つ。", "example": "真夏の満員バスは焦熱地獄、冷房が故障していると聞いて全員が無言になった。", "accent": null},
+{"id": 191, "answer": "諸説紛紛", "reading": "しょせつふんぷん", "meaning": "いろいろな説や意見が入り乱れ、まとまりがつかないさま。", "origin": "", "example": "「宇宙人は実在するか」というテーマで、町内会の雑談は諸説紛紛、最後は町内会長が宇宙人説を唱えた。", "accent": null},
+{"id": 192, "answer": "心機一転", "reading": "しんきいってん", "meaning": "あることを契機にして、気持ちを入れ替えて出直すこと。", "origin": "", "example": "心機一転、髪を切った父だったが、誰にも気づかれず一週間が過ぎた。", "accent": null},
+{"id": 193, "answer": "真剣勝負", "reading": "しんけんしょうぶ", "meaning": "本気で勝負すること。本気で物事にとりくむこと。", "origin": "", "example": "家族のじゃんけんは真剣勝負、最後の唐揚げ一個がかかっている。", "accent": null},
+{"id": 194, "answer": "針小棒大", "reading": "しんしょうぼうだい", "meaning": "針のように小さなことを、棒ほどもあるように大きくいう。", "origin": "", "example": "「蚊に刺された」と言う弟の話は針小棒大、最後には「サメに噛まれた」になっていた。", "accent": null},
+{"id": 195, "answer": "新進気鋭", "reading": "しんしんきえい", "meaning": "新たに参加したてで非常に意気込み、勢いが盛んなこと。また、その人。", "origin": "", "example": "新進気鋭の若手シェフが作った新メニューは、「納豆ソフトクリーム」だった。", "accent": null},
+{"id": 196, "answer": "人跡未踏", "reading": "じんせきみとう", "meaning": "いまだかつて、人が足をふみ入れたことがないこと。", "origin": "", "example": "人跡未踏の兄の部屋の奥には、去年なくした靴下が十足眠っていた。", "accent": null},
+{"id": 197, "answer": "新陳代謝", "reading": "しんちんたいしゃ", "meaning": "古いものと新しいものが入れ替わること。組織の若返りなどにもいう。", "origin": "「陳」は古いもの、「謝」は去ること。古いものが去って新しいものと入れ替わることを表す。", "example": "冷蔵庫の中は新陳代謝が悪く、奥から賞味期限が去年の漬物が出てきた。", "accent": null},
+{"id": 198, "answer": "晴耕雨読", "reading": "せいこううどく", "meaning": "晴れた日は田畑の仕事、雨が降れば家にこもって読書という、気の向くままの生活のこと。", "origin": "", "example": "晴耕雨読を理想とする祖父は、晴れの日は家庭菜園、雨の日は漫画を読んでいる。", "accent": null},
+{"id": 199, "answer": "生殺与奪", "reading": "せいさつよだつ", "meaning": "生かすも殺すも、奪うも与えるも、思いのままであること。", "origin": "", "example": "生殺与奪の権を握る母は、テレビのリモコンを持って家族を見下ろしている。", "accent": null},
+{"id": 200, "answer": "清廉潔白", "reading": "せいれんけっぱく", "meaning": "心が清く、不正するようなうしろめたいところがないさま。", "origin": "", "example": "清廉潔白を訴える弟の口のまわりには、チョコレートがべったりついていた。", "accent": null},
+{"id": 201, "answer": "是非曲直", "reading": "ぜひきょくちょく", "meaning": "物事の善悪。正と不正。", "origin": "", "example": "是非曲直を正すため、兄弟のけんかは母の前で裁判のように行われた。", "accent": null},
+{"id": 202, "answer": "浅学非才", "reading": "せんがくひさい", "meaning": "学識が浅く未熟であること。", "origin": "", "example": "「浅学非才の身ですが」と挨拶した教授は、その後二時間しゃべり続けた。", "accent": null},
+{"id": 203, "answer": "千客万来", "reading": "せんきゃくばんらい", "meaning": "多くの客が絶え間なく訪れること。", "origin": "", "example": "千客万来を願って招き猫を十匹飾ったら、店が狭くなって客が入れなくなった。", "accent": null},
+{"id": 204, "answer": "前後不覚", "reading": "ぜんごふかく", "meaning": "気を失うことなどで、後先の判断がつかなくなるほど正気を失うこと。", "origin": "", "example": "遠足の前夜にはしゃぎすぎた弟は、バスの中で前後不覚に眠り、着いたことにも気づかなかった。", "accent": null},
+{"id": 205, "answer": "千載一遇", "reading": "せんざいいちぐう", "meaning": "めったにない良い機会のこと。", "origin": "東晋の袁宏（えんこう）が書いた「三国名臣序賛」に見える言葉。「載」は年の意で、千年に一度しか出会えないほどの機会のこと。", "example": "千載一遇の大チャンス、店員さんが「もう一個おまけ」と言ったので、母はすかさず袋を広げた。", "accent": null},
+{"id": 206, "answer": "千差万別", "reading": "せんさばんべつ", "meaning": "いろいろなものがそれぞれに相違や差異があること。", "origin": "", "example": "千差万別のおにぎりの具の中で、祖父が一番好きなのはなぜか白米だけの塩むすびだ。", "accent": null},
+{"id": 207, "answer": "全身全霊", "reading": "ぜんしんぜんれい", "meaning": "体力と気力のすべて。その人の身も心もすべて。", "origin": "", "example": "全身全霊を込めて作った妹の工作は、「何これ？」と聞かれると毎回答えが違う。", "accent": null},
+{"id": 208, "answer": "前人未到", "reading": "ぜんじんみとう", "meaning": "今までだれも到達していないこと。", "origin": "", "example": "前人未到の記録に挑む父は、目覚まし時計を二十個並べて起きられるかを試している。", "accent": null},
+{"id": 209, "answer": "前途有望", "reading": "ぜんとゆうぼう", "meaning": "将来成功する見込みが大きいこと。", "origin": "", "example": "前途有望な新人と言われた兄は、初出勤の日に会社の場所を間違えた。", "accent": null},
+{"id": 210, "answer": "千変万化", "reading": "せんぺんばんか", "meaning": "さまざまに変化すること。", "origin": "", "example": "千変万化する空の雲を眺めて、弟は「全部ソフトクリームに見える」と言った。", "accent": null},
+{"id": 211, "answer": "先憂後楽", "reading": "せんゆうこうらく", "meaning": "先に心配事・苦難に思うことをかたづけ、楽しみは後回しにすること。", "origin": "北宋の范仲淹（はんちゅうえん）の「岳陽楼記」の「天下の憂いに先んじて憂い、天下の楽しみに後れて楽しむ」より。東京・小石川の後楽園の名の由来でもある。", "example": "先憂後楽の精神で、妹は夏休みの宿題を初日に終わらせ、残りの日はひたすら遊んでいる。", "accent": null},
+{"id": 212, "answer": "千慮一失", "reading": "せんりょいっしつ", "meaning": "知者が、どんなに入念に考えたことでも、一つくらいは失敗や間違いがあるということ。", "origin": "『史記』淮陰侯列伝の「智者も千慮に必ず一失有り」より。", "example": "千慮一失、完璧な旅行計画を立てた父は、全員分の新幹線の切符を家に忘れた。", "accent": null},
+{"id": 213, "answer": "創意工夫", "reading": "そういくふう", "meaning": "今までにないものを新たに考え出し、いろいろな手段をめぐらすこと。", "origin": "", "example": "創意工夫を重ねた弟は、宿題を早く終わらせるために鉛筆を三本まとめて持った。", "accent": null},
+{"id": 214, "answer": "相乗効果", "reading": "そうじょうこうか", "meaning": "複数の原因が重なり、個々に得られる以上の結果を生じること。", "origin": "", "example": "ピアノとダンスの相乗効果で、姉は踊りながら弾けるようになった。", "accent": null},
+{"id": 215, "answer": "則天去私", "reading": "そくてんきょし", "meaning": "自然の道理に従い、小さな自分を捨てて生きること。", "origin": "夏目漱石が晩年に理想とした境地として知られる言葉。", "example": "則天去私の境地に達したと語る祖父は、最近テレビのチャンネル争いから身を引いた。", "accent": null},
+{"id": 216, "answer": "率先垂範", "reading": "そっせんすいはん", "meaning": "先頭に立って行動し模範を示すこと。", "origin": "", "example": "率先垂範をモットーにする部長は、会社の大掃除で誰よりも先にトイレ掃除を始めた。", "accent": null},
+{"id": 217, "answer": "大器晩成", "reading": "たいきばんせい", "meaning": "偉大な人物は、若いうちは実力を蓄え、じょじょに実力を発揮し、晩年に大成するということ。", "origin": "『老子』の「大器は晩成す」より。", "example": "大器晩成を信じる兄は、四十歳で初めて自転車に乗れるようになった。", "accent": null},
+{"id": 218, "answer": "大義名分", "reading": "たいぎめいぶん", "meaning": "ある行為をするための根拠と正当な理由。", "origin": "", "example": "大義名分を手に入れた弟は、「勉強のため」と言ってタブレットでゲームを始めた。", "accent": null},
+{"id": 219, "answer": "大山鳴動", "reading": "たいざんめいどう", "meaning": "騒ぎは非常に大きいが、結果は意外に小さいことのたとえ。", "origin": "「大山鳴動して鼠一匹」ということわざから。西洋のことわざがもとになったとされる。", "example": "「大事件だ！」と父が叫んで家中が大山鳴動、正体は靴下の片方が見つからないだけだった。", "accent": null},
+{"id": 220, "answer": "大胆不敵", "reading": "だいたんふてき", "meaning": "度胸がすわっていて敵をまったく恐れないさま。", "origin": "", "example": "大胆不敵なスズメは、公園でお弁当を食べる祖父のおにぎりの上に乗った。", "accent": null},
+{"id": 221, "answer": "大同小異", "reading": "だいどうしょうい", "meaning": "多少の違いはあるが、ほぼ同じであること。似たり寄ったりであること。", "origin": "『荘子』天下篇に見える言葉。", "example": "兄と弟の言い訳は大同小異、どちらも「犬がやった」だった。", "accent": null},
+{"id": 222, "answer": "暖衣飽食", "reading": "だんいほうしょく", "meaning": "暖かい服を着て、十分に食べること。なんの不足もない恵まれた生活。", "origin": "『孟子』滕文公（とうぶんこう）上篇の「飽食暖衣」より。", "example": "暖衣飽食の飼い猫は、最近ついに自力でこたつから出られなくなった。", "accent": null},
+{"id": 223, "answer": "単純明快", "reading": "たんじゅんめいかい", "meaning": "はっきりして、わかりやすいこと。筋道が通っていて内容もよくわかること。", "origin": "", "example": "単純明快な妹の人生観は、「おいしいものを食べて寝る」である。", "accent": null},
+{"id": 224, "answer": "単刀直入", "reading": "たんとうちょくにゅう", "meaning": "前置きなしにいきなり要点に入ること。", "origin": "禅の語録『景徳伝灯録（けいとくでんとうろく）』などに見える言葉。一振りの刀を持って敵陣に一人で斬り込むことから。", "example": "単刀直入に「お小遣いを上げて」と頼んだ弟は、単刀直入に「だめ」と言われた。", "accent": null},
+{"id": 225, "answer": "昼夜兼行", "reading": "ちゅうやけんこう", "meaning": "昼も夜も休まずに進むこと。転じて、物事を続けて行うこと。", "origin": "", "example": "昼夜兼行でゲームを進めた兄は、エンディングで寝落ちして見逃した。", "accent": null},
+{"id": 226, "answer": "直情径行", "reading": "ちょくじょうけいこう", "meaning": "感情のおもむくままに行動に移すこと。", "origin": "『礼記』檀弓（だんぐう）下篇に見える言葉。", "example": "直情径行の弟は、テレビでラーメン特集を見た五分後には、もう店に並んでいた。", "accent": null},
+{"id": 227, "answer": "治乱興亡", "reading": "ちらんこうぼう", "meaning": "世の中がよく治まることと、乱れて亡びること。", "origin": "", "example": "治乱興亡を描いた大河ドラマを見た祖父は、なぜか家庭菜園の配置を改革し始めた。", "accent": null},
+{"id": 228, "answer": "適者生存", "reading": "てきしゃせいぞん", "meaning": "環境に適した者が生き残り、適さない者は滅びるということ。", "origin": "イギリスの哲学者ハーバート・スペンサーの \"survival of the fittest\" を訳した言葉。", "example": "バーゲン会場は適者生存の世界、母は肘を巧みに使って最前列にたどり着いた。", "accent": null},
+{"id": 229, "answer": "天衣無縫", "reading": "てんいむほう", "meaning": "詩文などで技巧の跡がなく、ごく自然に見えながら完成度の高いこと。", "origin": "中国の伝奇小説に見える、天人（てんにん）の衣には縫い目がないという話から。", "example": "天衣無縫な幼稚園児の絵は、ピカソも驚く自由さで、太陽が緑色に塗られていた。", "accent": null},
+{"id": 230, "answer": "天下無双", "reading": "てんかむそう", "meaning": "天下に並び立つ人物がいないほど優れていること。また、優れている人。", "origin": "", "example": "腕相撲では天下無双を誇る祖父も、孫の「おじいちゃん大好き」の一言にはあっさり負ける。", "accent": null},
+{"id": 231, "answer": "電光石火", "reading": "でんこうせっか", "meaning": "稲妻の光と火打ち石を打って出る火花。非常に短い時間。また動作がきわめて速いこと。", "origin": "", "example": "電光石火の早さで、弟は「宿題やった？」の質問から逃げ去った。", "accent": null},
+{"id": 232, "answer": "天変地異", "reading": "てんぺんちい", "meaning": "雷、暴風、地震など、自然界に起こる異変。", "origin": "", "example": "天変地異の前触れかと思ったら、二階で兄が筋トレを始めただけだった。", "accent": null},
+{"id": 233, "answer": "同工異曲", "reading": "どうこういきょく", "meaning": "できや技巧は同じだが、趣や味わいが違う。転じて、見かけは違うようでも同じ手法であること。", "origin": "唐の韓愈の文章「進学解」に見える言葉。", "example": "父の自作の歌はどれも同工異曲、メロディーが全部同じ演歌調である。", "accent": null},
+{"id": 234, "answer": "得意満面", "reading": "とくいまんめん", "meaning": "顔いっぱいに、誇らしい気持ちが表れること。", "origin": "", "example": "逆上がりができた弟は得意満面、その日は鉄棒から降りようとしなかった。", "accent": null},
+{"id": 235, "answer": "独断専行", "reading": "どくだんせんこう", "meaning": "他の人に相談しないで自分一人で判断し、自分の思うまま勝手に実行すること。", "origin": "", "example": "独断専行で家族旅行の行き先を決めた父は、着いてから定休日だと知った。", "accent": null},
+{"id": 236, "answer": "二者択一", "reading": "にしゃたくいつ", "meaning": "二つの中から一つを選ぶこと。", "origin": "", "example": "「宿題をやるか、お手伝いをするか」の二者択一を迫られた弟は、「昼寝」と答えた。", "accent": null},
+{"id": 237, "answer": "二束三文", "reading": "にそくさんもん", "meaning": "二束でわずか三文の意。数多く投げ売りする場合の値段をいう。", "origin": "", "example": "父が若い頃に集めたカセットテープは、リサイクルショップで二束三文だった。", "accent": null},
+{"id": 238, "answer": "日常茶飯", "reading": "にちじょうさはん", "meaning": "普段の食事。転じて、ありふれた平凡なこと。", "origin": "", "example": "兄が寝坊して朝ごはんを食べながら走っていくのは、わが家の日常茶飯である。", "accent": null},
+{"id": 239, "answer": "日進月歩", "reading": "にっしんげっぽ", "meaning": "絶えず進歩することと。とどまることなく急速に進歩すること。", "origin": "", "example": "日進月歩のスマホ業界、祖父がやっと覚えた操作は、次の機種ではもう変わっていた。", "accent": null},
+{"id": 240, "answer": "破顔一笑", "reading": "はがんいっしょう", "meaning": "顔をほころばせて笑うこと。", "origin": "", "example": "赤ちゃんの破顔一笑に、厳しい顔の祖父もつられて入れ歯が飛び出るほど笑った。", "accent": null},
+{"id": 241, "answer": "博学多才", "reading": "はくがくたさい", "meaning": "広く学問に通じ、多方面にすぐれた才能を持っていること。", "origin": "", "example": "博学多才の叔父は、五か国語を話し、料理も絵も得意だが、電子レンジの使い方だけ知らない。", "accent": null},
+{"id": 242, "answer": "博覧強記", "reading": "はくらんきょうき", "meaning": "ひろく書物を読み、そのことを記憶していること。", "origin": "", "example": "博覧強記の祖母は、百年前の新聞記事まで覚えているのに、眼鏡の置き場所は毎朝忘れる。", "accent": null},
+{"id": 243, "answer": "波乱万丈", "reading": "はらんばんじょう", "meaning": "物事の変化がきわめて激しいこと。", "origin": "", "example": "波乱万丈の人生を送った祖父の自伝は、第一章が「生まれた日に停電」から始まる。", "accent": null},
+{"id": 244, "answer": "百家争鳴", "reading": "ひゃっかそうめい", "meaning": "多くの学者が自由に論争すること。", "origin": "中国の戦国時代、多くの学者（諸子百家）が自由に論じ合ったことにちなみ、1950年代の中国で「百花斉放・百家争鳴」のスローガンとして掲げられた。", "example": "「目玉焼きに何をかけるか」で家族会議は百家争鳴、しょうゆ・ソース・塩・ケチャップに分かれた。", "accent": null},
+{"id": 245, "answer": "品行方正", "reading": "ひんこうほうせい", "meaning": "行い、行状がきちんとして正しいこと。", "origin": "", "example": "品行方正な学級委員長も、給食の揚げパンの日だけは誰よりも早く並ぶ。", "accent": null},
+{"id": 246, "answer": "不朽不滅", "reading": "ふきゅうふめつ", "meaning": "永遠に滅びないこと。", "origin": "", "example": "不朽不滅の名作と言われるゲームも、兄のセーブデータは弟の上書きで消えた。", "accent": null},
+{"id": 247, "answer": "複雑怪奇", "reading": "ふくざつかいき", "meaning": "いろいろなことが込み入って混乱している状態で、全体として怪しく不思議なようす。", "origin": "", "example": "複雑怪奇な兄の部屋の配線は、どのコードがどこにつながっているのか本人にもわからない。", "accent": null},
+{"id": 248, "answer": "複雑多岐", "reading": "ふくざつたき", "meaning": "多くのことが込み入っていて多方面にわたっていること。", "origin": "", "example": "複雑多岐にわたる母の家事リストの最後には、「父を起こす」と書いてある。", "accent": null},
+{"id": 249, "answer": "不眠不休", "reading": "ふみんふきゅう", "meaning": "眠らず、休まないこと。期限の間際などに懸命に努めるさま。", "origin": "", "example": "不眠不休で作った自由研究を、弟は当日家に忘れていった。", "accent": null},
+{"id": 250, "answer": "不老長寿", "reading": "ふろうちょうじゅ", "meaning": "いつまでも老いず、長生きすること。", "origin": "", "example": "不老長寿の薬を探し求める父が、最後にたどり着いたのは早寝早起きだった。", "accent": null},
+{"id": 251, "answer": "平穏無事", "reading": "へいおんぶじ", "meaning": "おだやかで、これといったこともなく安らかなこと。", "origin": "", "example": "平穏無事な日曜日は、弟が「パンケーキを作る」と言い出した瞬間に終わった。", "accent": null},
+{"id": 252, "answer": "平身低頭", "reading": "へいしんていとう", "meaning": "頭を下げて、恐れ入ること。ひたすら謝ること。", "origin": "", "example": "花瓶を割った兄は平身低頭で謝ったが、割れたのは百円ショップの花瓶だった。", "accent": null},
+{"id": 253, "answer": "変幻自在", "reading": "へんげんじざい", "meaning": "出没や変化が自由自在であること。またそのようす。", "origin": "", "example": "変幻自在のマジシャンは、ハトを出すはずが、なぜか自分の財布を出してしまった。", "accent": null},
+{"id": 254, "answer": "片言隻句", "reading": "へんげんせきく", "meaning": "わずかな言葉。ちょっとした短い言葉。", "origin": "", "example": "片言隻句も聞き逃すまいと、祖母は孫の電話をスピーカーにして近所中に聞かせた。", "accent": null},
+{"id": 255, "answer": "片言隻話", "reading": "へんげんせきわ", "meaning": "わずかな言葉。", "origin": "", "example": "父は片言隻話にも重みがあると思っているが、口から出るのはダジャレばかりだ。", "accent": null},
+{"id": 256, "answer": "本末転倒", "reading": "ほんまつてんとう", "meaning": "根本的で重要な事柄と小さくつまらない事柄を取り違えること。", "origin": "", "example": "ダイエットのためにジムまで車で行き、駐車場が空くのを一時間待つのは本末転倒である。", "accent": null},
+{"id": 257, "answer": "漫言放語", "reading": "まんげんほうご", "meaning": "勝手なことを言い散らすこと。言いたい放題。", "origin": "", "example": "酔った叔父の漫言放語に、親戚一同は苦笑いしながらおせちを食べ続けた。", "accent": null},
+{"id": 258, "answer": "無我夢中", "reading": "むがむちゅう", "meaning": "物事に熱中して自分を忘れ、他のことを顧みないこと。", "origin": "", "example": "無我夢中でゲームをしていた兄は、母が後ろで三十分立っていたことに気づかなかった。", "accent": null},
+{"id": 259, "answer": "無病息災", "reading": "むびょうそくさい", "meaning": "病気をせず健康で、また災害がなく無事。", "origin": "", "example": "無病息災を願って神社で鐘を鳴らした祖父は、勢いあまって腰を痛めた。", "accent": null},
+{"id": 260, "answer": "無味乾燥", "reading": "むみかんそう", "meaning": "少しもおもしろみや味わいのないこと。", "origin": "", "example": "無味乾燥な歴史年表も、祖父が語ると「武将たちのおやつ事情」の話になる。", "accent": null},
+{"id": 261, "answer": "明鏡止水", "reading": "めいきょうしすい", "meaning": "くもりのない鏡と静かな水面。転じて、心にいつわりなく静かに落ち着いているさま。", "origin": "『荘子』徳充符篇に見える言葉から。", "example": "明鏡止水の心で試験に臨んだ兄は、落ち着きすぎて名前を書き忘れた。", "accent": null},
+{"id": 262, "answer": "名実一体", "reading": "めいじついったい", "meaning": "表向きの評判と内容が一致していること。", "origin": "", "example": "「早起きの達人」を名乗る祖父は名実一体、毎朝四時にニワトリより先に起きている。", "accent": null},
+{"id": 263, "answer": "明朗快活", "reading": "めいろうかいかつ", "meaning": "明るく元気で、ほがらかであるさま。", "origin": "", "example": "明朗快活な新しい先生は、自己紹介で歌って踊り、最後に転んだ。", "accent": null},
+{"id": 264, "answer": "名論卓説", "reading": "めいろんたくせつ", "meaning": "格調高い議論とりわけすぐれた意見。", "origin": "", "example": "名論卓説を語る評論家も、家では奥さんに「靴下を出しっぱなし」と怒られている。", "accent": null},
+{"id": 265, "answer": "迷惑千万", "reading": "めいわくせんばん", "meaning": "たいへん迷惑なこと。", "origin": "", "example": "夜中の二時に始まった隣の家の大掃除は、迷惑千万だった。", "accent": null},
+{"id": 266, "answer": "優柔不断", "reading": "ゆうじゅうふだん", "meaning": "気が弱くぐずぐずとして決断力にとぼしいこと。", "origin": "", "example": "優柔不断の父は、ファミレスで注文を決めるのに三十分かかり、結局いつものハンバーグにした。", "accent": null},
+{"id": 267, "answer": "有名無実", "reading": "ゆうめいむじつ", "meaning": "名ばかりで、実質が伴わないこと。評判と実際とが違っていること。", "origin": "", "example": "「警備隊長」と呼ばれる飼い犬は有名無実、泥棒役の父にしっぽを振って喜んだ。", "accent": null},
+{"id": 268, "answer": "油断大敵", "reading": "ゆだんたいてき", "meaning": "注意を怠れば必ず失敗を招くから警戒せよという戒め。", "origin": "", "example": "油断大敵、ゴール直前で手を振っていた兄は、後ろから来た弟に抜かれた。", "accent": null},
+{"id": 269, "answer": "用意周到", "reading": "よういしゅうとう", "meaning": "心づかいがゆきとどいて手抜かりのないこと。", "origin": "", "example": "用意周到な母は、遠足のお弁当に傘と絆創膏と予備の箸を三膳入れた。", "accent": null},
+{"id": 270, "answer": "容姿端麗", "reading": "ようしたんれい", "meaning": "姿、形がきちんと整っていて美しいこと。", "origin": "", "example": "容姿端麗なマネキンに着せた服を買ったが、家で着た自分とはまったく別物だった。", "accent": null},
+{"id": 271, "answer": "利害得失", "reading": "りがいとくしつ", "meaning": "利益になることと、損害になること。", "origin": "", "example": "利害得失を一晩考えた兄は、結局アイスを二個買う道を選んだ。", "accent": null},
+{"id": 272, "answer": "力戦奮闘", "reading": "りきせんふんとう", "meaning": "力いっぱい努力すること。", "origin": "", "example": "力戦奮闘したリレーのアンカーは、ゴールの瞬間にずぼんのゴムが切れた。", "accent": null},
+{"id": 273, "answer": "離合集散", "reading": "りごうしゅうさん", "meaning": "離れたり集まったりする。また、そのくりかえし。", "origin": "", "example": "クラスの仲良しグループは離合集散を繰り返し、気づけば全員が一つのグループになっていた。", "accent": null},
+{"id": 274, "answer": "立身出世", "reading": "りっしんしゅっせ", "meaning": "社会的な地位を確立して名をあげること。", "origin": "", "example": "立身出世を夢見る弟の最初の一歩は、「クラスの給食当番長」だった。", "accent": null},
+{"id": 275, "answer": "流言飛語", "reading": "りゅうげんひご", "meaning": "世間で言いふらされている、根拠のないうわさ話。", "origin": "", "example": "「校長先生は実はロボット」という流言飛語が広まり、全校集会で先生が自ら否定した。", "accent": null},
+{"id": 276, "answer": "粒粒辛苦", "reading": "りゅうりゅうしんく", "meaning": "こつこつと努力や苦労をすること。", "origin": "唐の李紳（りしん）の詩「農を憫（あわ）れむ」より。茶碗の中の米の一粒一粒が、農民の苦労の結晶であることを詠んだ。", "example": "粒粒辛苦の末に完成させた五千ピースのジグソーパズルは、最後の一ピースだけ犬が食べていた。", "accent": null},
+{"id": 277, "answer": "臨機応変", "reading": "りんきおうへん", "meaning": "その場に臨み変化に応じて最も適当な手段をほどこすこと。そのさま。", "origin": "", "example": "傘を忘れた父は臨機応変、スーパーの袋を頭にかぶって帰ってきた。", "accent": null},
+{"id": 278, "answer": "老成円熟", "reading": "ろうせいえんじゅく", "meaning": "経験が豊富で人格、知識、技能などが十分に熟練して、豊かな内容を持っていること。", "origin": "", "example": "老成円熟の落語家は、話の途中で客席の赤ちゃんが泣き出しても、それを笑いに変えた。", "accent": null},
+{"id": 279, "answer": "炉辺談話", "reading": "ろへんだんわ", "meaning": "いろりのそばで、くつろいで話す、また話。", "origin": "", "example": "炉辺談話に花が咲き、祖父の昔話は三周目に入った。", "accent": null},
+{"id": 280, "answer": "和敬清寂", "reading": "わけいせいじゃく", "meaning": "茶道の精神を表す言葉。「和敬」は主人と客の心の持ち方の心得。「清寂」は茶室や茶道具などに関連する心得のこと。", "origin": "茶道の心得を表す言葉で、千利休の精神を表すものとして伝えられている。", "example": "和敬清寂の茶会で、父は足がしびれて立てなくなり、静寂が笑いに変わった。", "accent": null},
+{"id": 281, "answer": "和魂洋才", "reading": "わこんようさい", "meaning": "日本固有の精神を持ちながら西洋の学問を学ぶこと。", "origin": "平安時代からの「和魂漢才」をもとに、明治時代に作られた言葉とされる。", "example": "和魂洋才の祖父は、ナイフとフォークでお茶漬けを食べている。", "accent": null}
+];
+const SET_SIZE = 20;
+const K_LEARNED = 'yojiApp_learned', K_ACCENT = 'yojiApp_accent', K_SKIP = 'yojiApp_skipLearned';
+
+function load(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+let learned = load(K_LEARNED, {});
+let accentUser = load(K_ACCENT, {});
+let skipLearned = load(K_SKIP, true);
+let state = { screen:'home', set:0, list:[], idx:0, editAccent:false };
+
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const setCount = Math.ceil(DATA.length / SET_SIZE);
+const setItems = n => DATA.slice(n*SET_SIZE, (n+1)*SET_SIZE);
+
+// 読みを拍（モーラ）に分割：小書きの「ゃゅょぁぃぅぇぉゎ」は前の字と1拍
+function toMora(r){
+  const small = 'ゃゅょぁぃぅぇぉゎャュョァィゥェォヮ';
+  const out = [];
+  for (const ch of r){ if (small.includes(ch) && out.length) out[out.length-1] += ch; else out.push(ch); }
+  return out;
+}
+function getAccent(item){
+  if (accentUser[item.id]) return accentUser[item.id];
+  return item.accent; // null = 記載なし
+}
+
+function render(){
+  if (state.screen === 'home') renderHome();
+  else if (state.screen === 'study') renderStudy();
+  window.scrollTo(0,0);
+}
+
+function renderHome(){
+  let html = `<h1>四字熟語 学習帳</h1><div class="sub">漢検準2級・全${DATA.length}語／${SET_SIZE}語ずつ${setCount}セット</div>
+  <label class="opt"><input type="checkbox" id="skip" ${skipLearned?'checked':''}> 「覚えた」語を除いて学習する</label>
+  <div class="sets">`;
+  for (let s=0; s<setCount; s++){
+    const items = setItems(s), n = items.filter(i => learned[i.id]).length;
+    const first = items[0].id, last = items[items.length-1].id;
+    html += `<button class="set ${n===items.length?'done':''}" data-set="${s}"><b>セット${s+1}</b><small>No.${first}〜${last}　覚えた ${n}/${items.length}</small><div class="bar"><i style="width:${n/items.length*100}%"></i></div></button>`;
+  }
+  const total = DATA.filter(i => learned[i.id]).length;
+  html += `</div>
+  <div class="tools">覚えた語：${total} / ${DATA.length}<br>
+  <button id="exp">学習記録を書き出す</button><button id="imp">学習記録を読み込む</button>
+  <input type="file" id="file" accept="application/json,.json" style="display:none"></div>`;
+  app.innerHTML = html;
+  document.getElementById('skip').onchange = e => { skipLearned = e.target.checked; save(K_SKIP, skipLearned); };
+  app.querySelectorAll('[data-set]').forEach(b => b.onclick = () => startSet(+b.dataset.set));
+  document.getElementById('exp').onclick = exportData;
+  document.getElementById('imp').onclick = () => document.getElementById('file').click();
+  document.getElementById('file').onchange = importData;
+}
+
+function startSet(s){
+  let list = setItems(s);
+  if (skipLearned) list = list.filter(i => !learned[i.id]);
+  state = { screen:'study', set:s, list, idx:0, editAccent:false };
+  render();
+}
+
+function renderStudy(){
+  const { list, idx, set } = state;
+  const item = list[idx];
+  if (!item){
+    const hasNext = set + 1 < setCount;
+    app.innerHTML = `<div class="top"><button class="back" id="back">‹ セット一覧</button></div>
+      <div class="center"><p>${list.length ? 'セット'+(set+1)+' 完了' : 'このセットはすべて「覚えた」です'}</p>
+      <button class="big" id="again">もう一度</button>${hasNext?'<button class="big" id="nextset">次のセットへ</button>':''}</div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('again').onclick = () => startSet(set);
+    if (hasNext) document.getElementById('nextset').onclick = () => startSet(set+1);
+    return;
+  }
+  const mora = toMora(item.reading);
+  const acc = getAccent(item);
+  const accSet = new Set(acc || []);
+  const showDots = acc || state.editAccent;
+  const reading = mora.map((m,i) => `<span class="mora" data-m="${i}"><span class="dot">${showDots && accSet.has(i) ? '・' : '&nbsp;'}</span>${esc(m)}</span>`).join('');
+  let accNote = state.editAccent ? '高く発音する拍をタップしてください' : (acc ? (accentUser[item.id] ? 'アクセント（手入力）' : 'アクセント') : 'アクセント：記載なし');
+  const ex = esc(item.example).split(esc(item.answer)).join(`<mark>${esc(item.answer)}</mark>`);
+  app.innerHTML = `<div class="top"><button class="back" id="back">‹ セット一覧</button>
+    <div style="margin-left:auto;color:#6b7280;font-size:14px">セット${set+1}　${idx+1} / ${list.length}</div></div>
+  <div class="card">
+    <div class="reading ${state.editAccent?'editing':''}" id="reading">${reading}</div>
+    <div class="acc-note">${accNote}</div>
+    <div class="word">${esc(item.answer)}</div>
+    <div class="meaning">${esc(item.meaning)}</div>
+    <div class="sec"><h3>語源・出典</h3><p class="${item.origin?'':'none'}">${item.origin ? esc(item.origin) : '記載なし'}</p></div>
+    <div class="sec ex"><h3>覚え方例文</h3><p>${ex}</p></div>
+  </div>
+  <div class="nav"><button class="next" id="next">次へ</button>${idx>0?'<button class="prev" id="prev">前へ</button>':''}</div>
+  <label class="learned"><input type="checkbox" id="lrn" ${learned[item.id]?'checked':''}> 覚えた</label>
+  <div class="small-btns"><button id="edit" class="${state.editAccent?'on':''}">${state.editAccent?'アクセント入力を終える':'アクセントを入力'}</button>
+  ${accentUser[item.id]?'<button id="clr">手入力を消す</button>':''}</div>`;
+  document.getElementById('back').onclick = goHome;
+  document.getElementById('next').onclick = () => { state.idx++; state.editAccent=false; render(); };
+  if (idx>0) document.getElementById('prev').onclick = () => { state.idx--; state.editAccent=false; render(); };
+  document.getElementById('lrn').onchange = e => { if (e.target.checked) learned[item.id] = true; else delete learned[item.id]; save(K_LEARNED, learned); };
+  document.getElementById('edit').onclick = () => { state.editAccent = !state.editAccent; render(); };
+  const clr = document.getElementById('clr');
+  if (clr) clr.onclick = () => { delete accentUser[item.id]; save(K_ACCENT, accentUser); render(); };
+  if (state.editAccent){
+    app.querySelectorAll('[data-m]').forEach(el => el.onclick = () => {
+      const i = +el.dataset.m;
+      const cur = new Set(accentUser[item.id] || item.accent || []);
+      cur.has(i) ? cur.delete(i) : cur.add(i);
+      if (cur.size) accentUser[item.id] = [...cur].sort((a,b)=>a-b); else delete accentUser[item.id];
+      save(K_ACCENT, accentUser); render();
+    });
+  }
+}
+
+function goHome(){ state = { screen:'home', set:0, list:[], idx:0, editAccent:false }; render(); }
+
+function exportData(){
+  const blob = new Blob([JSON.stringify({ app:'yojiApp', date:new Date().toISOString(), learned, accent:accentUser }, null, 1)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'yoji-record-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function importData(e){
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      if (d.learned) { learned = d.learned; save(K_LEARNED, learned); }
+      if (d.accent) { accentUser = d.accent; save(K_ACCENT, accentUser); }
+      render();
+    }catch(err){ document.querySelector('.tools').insertAdjacentHTML('beforeend','<div style="color:#dc2626;margin-top:6px">読み込みに失敗しました（形式が違います）</div>'); }
+  };
+  r.readAsText(f);
+}
+
+render();
+</script>
+</body>
+</html>
